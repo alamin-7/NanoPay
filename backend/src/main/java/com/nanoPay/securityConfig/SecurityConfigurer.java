@@ -18,10 +18,11 @@ public class SecurityConfigurer {
 
         return httpSecurity
                 .csrf(customizer -> customizer.disable())
-                .authorizeHttpRequests(request -> request.anyRequest().authenticated())
-                .formLogin(Customizer.withDefaults())
+                .authorizeHttpRequests(request -> request
+                      //  .requestMatchers("/").permitAll()
+                        .anyRequest().permitAll())
                 .httpBasic(Customizer.withDefaults())
-                //.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .build();
     }

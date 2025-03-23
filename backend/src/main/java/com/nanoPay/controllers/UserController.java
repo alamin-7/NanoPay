@@ -1,23 +1,24 @@
 package com.nanoPay.controllers;
 
-import com.nanoPay.models.AccountType;
 import com.nanoPay.models.User;
-import com.nanoPay.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.nanoPay.services.AuthService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.Date;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    private AuthService authService;
 
-    @Autowired
-    private UserService userService;
+    public UserController (AuthService authService) {
+        this.authService = authService;
+    }
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
-
-        return userService.registerUser(user);
+        return authService.registerUser(user);
+    }
+    @PostMapping("/login")
+    public String loginUser(@RequestBody User user) {
+          return authService.loginUser(user);
     }
 }

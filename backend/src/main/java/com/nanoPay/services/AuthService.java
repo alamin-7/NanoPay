@@ -1,24 +1,25 @@
 package com.nanoPay.services;
 
-import com.nanoPay.models.AccountType;
 import com.nanoPay.models.User;
 import com.nanoPay.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.Optional;
 @Service
-public class UserService {
-    @Autowired
+@Lazy
+public class AuthService {
     private UserRepository userRepository;
-    @Autowired
     private PasswordEncoder passwordEncoder;
+    private JWTService jwtService;
     private User user;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JWTService jwtService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+    }
 
     public User registerUser(User user) {
 
@@ -33,6 +34,17 @@ public class UserService {
         user.setPassword(encryptedPassword);
 
         return userRepository.save(user);
+    }
+
+    public String loginUser(User user) {
+        User existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser == null) {
+            throw new IllegalArgumentException("User not found.");
+        }
+        if (!passwordEncoder.matches(user.getPassword(), existingUser.getPassword())) {
+            throw new IllegalArgumentException("Invalid password.");
+        }
+        return jwtService.generateToken(user.getEmail());
     }
     private boolean isEmailExists(String email) {
         Optional<User> existingUser = Optional.ofNullable(userRepository.findByEmail(email));

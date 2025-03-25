@@ -1,25 +1,31 @@
 package com.nanoPay.services;
 import java.security.*;
 
-import com.nanoPay.models.User;
+import com.nanoPay.models.UserPrincipal;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JWTService {
 
-    private String SECRET_KEY;
+    @Autowired
+    MyUserDetailService myUserDetailService;
+
+    private String SECRET_KEY = "";
 
     public JWTService() {
         try {
@@ -46,10 +52,39 @@ public class JWTService {
                 .compact();
     }
 
-    public Key getKey() {
+    public SecretKey getKey() {
 
         byte [] bytesKey = Decoders.BASE64.decode(SECRET_KEY);
 
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+    public boolean validateToken(String token, UserDetails userDetails) {
+        String email = extractEmail(token);
+        System.out.println("In JWTService: user_name: "+ userDetails.getUsername());
+        return email.equals(((UserPrincipal) userDetails).getEmail()) && !isTokenExpired(token);
+    }
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
 }

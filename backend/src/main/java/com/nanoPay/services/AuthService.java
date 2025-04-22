@@ -15,10 +15,14 @@ public class AuthService {
     private JWTService jwtService;
     private User user;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JWTService jwtService) {
+    private WalletService walletService;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       JWTService jwtService, WalletService walletService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.walletService = walletService;
     }
 
     public User registerUser(User user) {
@@ -33,7 +37,11 @@ public class AuthService {
         String encryptedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encryptedPassword);
 
-        return userRepository.save(user);
+        User savedUser =  userRepository.save(user);
+
+        walletService.createWalletForUser(savedUser);
+
+        return savedUser;
     }
 
     public String loginUser(User user) {
